@@ -1,0 +1,4 @@
+patron	reemplazo	nota
+\bpadmet?\b	PubMed	semilla, errores observados el 2026-11-18 en tres motores
+\b(occidian|oxidian)\b	Obsidian	semilla, errores observados el 2026-11-18
+\bsuper\s+whisper\b	Superwhisper	semilla, los motores lo separan en dos palabras

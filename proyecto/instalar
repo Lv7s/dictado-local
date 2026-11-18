@@ -1,0 +1,16 @@
+#!/bin/sh
+# Instala la última compilación en salidas/app. La instalada antes queda en .compilacion/anterior (una sola).
+# Cierra Dictado Local antes: cada compilación ad hoc vuelve a pedir el permiso de Micrófono.
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+name='Dictado Local.app'
+source="$root/.compilacion/app/$name"
+target="$root/../app/$name"
+previous="$root/.compilacion/anterior"
+codesign --verify --strict "$source"
+rm -rf "$previous"
+mkdir -p "$previous"
+if [ -e "$target" ]; then mv "$target" "$previous/$name"; fi
+mv "$source" "$target"
+codesign --verify --strict "$target"
+printf 'Instalada en %s\n' "$target"

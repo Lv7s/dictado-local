@@ -1,0 +1,5 @@
+.DS_Store
+.venv/
+.compilacion/
+__pycache__/
+app/*.app/

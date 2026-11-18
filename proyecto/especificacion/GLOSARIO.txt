@@ -1,0 +1,7 @@
+PubMed
+Obsidian
+LaTeX
+Superwhisper
+Claude
+prompt
+Whisper large v3 turbo

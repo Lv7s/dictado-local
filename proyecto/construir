@@ -1,0 +1,24 @@
+#!/bin/sh
+# Compila siempre en el mismo sitio: .compilacion/app/Dictado Local.app (sin copias por revisión).
+# Uso: construir <revisión>   ·   después: instalar-revision
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+revision=${1:-}
+case "$revision" in ''|*[!0-9]*) echo 'Uso: construir <revisión entera>' >&2; exit 2 ;; esac
+work="$root/.compilacion"
+app="$work/app/Dictado Local.app"
+mkdir -p "$work/cache"
+rm -rf "$work/app"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/especificacion"
+sed "s/private let build = \"1\"/private let build = \"$revision\"/" "$root/DictadoLocal.swift" > "$work/DictadoLocal.swift"
+grep -q "private let build = \"$revision\"" "$work/DictadoLocal.swift" || { echo 'No se pudo fijar la revisión' >&2; exit 1; }
+sed -e "s/<key>CFBundleVersion<\/key><string>1/<key>CFBundleVersion<\/key><string>$revision/" \
+    -e "s|__PYTHON__|$root/.venv/bin/python|" "$root/Info.plist" > "$app/Contents/Info.plist"
+cp "$root/pipeline.py" "$app/Contents/Resources/"
+for asset in GLOSARIO.txt CORRECCIONES.tsv PROMPT_LIMPIEZA.md; do
+    cp "$root/especificacion/$asset" "$app/Contents/Resources/especificacion/"
+done
+xcrun swiftc -swift-version 5 -O -module-cache-path "$work/cache" "$work/DictadoLocal.swift" -o "$app/Contents/MacOS/DictadoLocal"
+codesign --force --sign - --identifier org.lavf.dictadolocal "$app"
+codesign --verify --strict "$app"
+printf '%s\n' "$app"

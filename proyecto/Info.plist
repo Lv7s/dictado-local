@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleExecutable</key><string>DictadoLocal</string>
+  <key>CFBundleIdentifier</key><string>org.lavf.dictadolocal</string>
+  <key>CFBundleName</key><string>Dictado Local</string>
+  <key>CFBundleDisplayName</key><string>Dictado Local</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>LADictadoPython</key><string>__PYTHON__</string>
+  <key>LSUIElement</key><true/>
+  <key>LSMinimumSystemVersion</key><string>26.0</string>
+  <key>NSMicrophoneUsageDescription</key><string>Dictado Local usa el micrófono para transcribir tu voz en español en este Mac.</string>
+</dict></plist>
