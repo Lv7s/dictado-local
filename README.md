@@ -70,3 +70,7 @@ El segundo recorre el mismo camino que un dictado real (decodificación, motor, 
 - Un dictado dura como máximo 10 minutos.
 - La primera transcripción tras abrir la app tarda unos segundos más porque carga Whisper.
 - Probado solo en español y con una voz.
+
+## Licencia y cita
+
+Licencia [MIT](LICENSE): puedes usarlo, modificarlo y redistribuirlo conservando el aviso de autoría. Si lo usas o lo adaptas, cita este repositorio; GitHub muestra la cita en «Cite this repository» a partir de [CITATION.cff](CITATION.cff).

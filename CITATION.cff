@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "Si usas o adaptas este software, cítalo así."
+title: "Dictado Local"
+abstract: "Dictado privado en español para Mac con Whisper large-v3-turbo (MLX) y gemma4:12b en Ollama, todo local."
+authors:
+  - alias: "Lv7s"
+type: software
+license: MIT
+repository-code: "https://github.com/Lv7s/dictado-local"
+date-released: "2026-11-18"
