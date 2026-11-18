@@ -101,40 +101,71 @@ final class Resampler {
     }
 }
 
-final class AudioCapture {
-    private let engine = AVAudioEngine()
+/// Graba con AVCaptureSession solo el micrófono integrado del Mac. La entrada del sistema no cambia y no se abre
+/// ningún otro micrófono: unos auriculares Bluetooth conectados siguen sonando en A2DP y las llamadas los usan como
+/// siempre. Si no hay micrófono integrado, se usa la entrada del sistema. El audio llega ya en PCM 16 kHz mono Int16.
+final class AudioCapture: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
+    private let session = AVCaptureSession()
+    private let queue = DispatchQueue(label: "org.lavf.dictadolocal.audio")
     private let lock = NSLock()
-    private var resampler: Resampler?
+    private var data = Data()
     private var active = false
-    private var observer: NSObjectProtocol?
+    private var onLimit: (() -> Void)?
+    private var observers: [NSObjectProtocol] = []
+
+    static func microphone() -> AVCaptureDevice? {
+        let found = AVCaptureDevice.DiscoverySession(deviceTypes: [.microphone], mediaType: .audio, position: .unspecified).devices
+        return found.first { UInt32(bitPattern: $0.transportType) == kAudioDeviceTransportTypeBuiltIn }
+            ?? AVCaptureDevice.default(for: .audio)
+    }
 
     func start(onLimit: @escaping () -> Void, onInterrupt: @escaping () -> Void) throws {
-        let input = engine.inputNode
-        let format = input.outputFormat(forBus: 0)
-        guard let resampler = Resampler(from: format) else { throw CocoaError(.featureUnsupported) }
-        lock.lock()
-        self.resampler = resampler
-        active = true
-        lock.unlock()
-        input.installTap(onBus: 0, bufferSize: 2048, format: format) { [weak self] source, _ in
-            guard let self else { return }
-            self.lock.lock()
-            defer { self.lock.unlock() }
-            guard self.active, let resampler = self.resampler else { return }
-            resampler.append(source)
-            if resampler.full {
-                self.active = false
-                DispatchQueue.main.async(execute: onLimit)
-            }
+        guard let device = Self.microphone() else { throw CocoaError(.featureUnsupported) }
+        let input = try AVCaptureDeviceInput(device: device)
+        let output = AVCaptureAudioDataOutput()
+        output.audioSettings = [AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 16000, AVNumberOfChannelsKey: 1,
+                                AVLinearPCMBitDepthKey: 16, AVLinearPCMIsFloatKey: false,
+                                AVLinearPCMIsNonInterleaved: false, AVLinearPCMIsBigEndianKey: false]
+        output.setSampleBufferDelegate(self, queue: queue)
+        session.beginConfiguration()
+        guard session.canAddInput(input), session.canAddOutput(output) else {
+            session.commitConfiguration()
+            throw CocoaError(.featureUnsupported)
         }
-        // Si cambia el dispositivo de entrada (auriculares), el motor se detiene: se procesa lo grabado.
-        observer = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange,
-                                                          object: engine, queue: .main) { _ in onInterrupt() }
-        do {
-            try engine.start()
-        } catch {
+        session.addInput(input)
+        session.addOutput(output)
+        session.commitConfiguration()
+        lock.lock()
+        data = Data()
+        active = true
+        self.onLimit = onLimit
+        lock.unlock()
+        // Si el micrófono se desconecta o la sesión falla, se procesa lo grabado.
+        for name in [AVCaptureSession.runtimeErrorNotification, AVCaptureSession.wasInterruptedNotification] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: session, queue: .main) { _ in onInterrupt() })
+        }
+        session.startRunning()
+        guard session.isRunning else {
             _ = stop()
-            throw error
+            throw CocoaError(.featureUnsupported)
+        }
+        metrics.info("Micrófono: \(device.localizedName, privacy: .public)")
+    }
+
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        guard let block = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
+        let length = CMBlockBufferGetDataLength(block)
+        guard length > 0 else { return }
+        var chunk = Data(count: length)
+        let status = chunk.withUnsafeMutableBytes { CMBlockBufferCopyDataBytes(block, atOffset: 0, dataLength: length, destination: $0.baseAddress!) }
+        guard status == kCMBlockBufferNoErr else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        guard active else { return }
+        data.append(chunk.prefix(Resampler.limit - data.count))
+        if data.count >= Resampler.limit {
+            active = false
+            if let onLimit { DispatchQueue.main.async(execute: onLimit) }
         }
     }
 
@@ -142,15 +173,16 @@ final class AudioCapture {
         lock.lock()
         active = false
         lock.unlock()
-        if let observer { NotificationCenter.default.removeObserver(observer) }
-        observer = nil
-        engine.stop()
-        engine.inputNode.removeTap(onBus: 0)
+        observers.forEach { NotificationCenter.default.removeObserver($0) }
+        observers = []
+        if session.isRunning { session.stopRunning() }
+        session.inputs.forEach { session.removeInput($0) }
+        session.outputs.forEach { session.removeOutput($0) }
+        queue.sync {}
         lock.lock()
         defer { lock.unlock() }
-        let result = resampler.flatMap { $0.failed ? nil : $0.data }
-        resampler = nil
-        return result
+        onLimit = nil
+        return data
     }
 }
 

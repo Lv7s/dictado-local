@@ -37,6 +37,8 @@ El modelo de Whisper se descarga la primera vez desde Hugging Face (`mlx-communi
 
 Al primer dictado macOS pide el permiso de **Micrófono**. Es el único que necesita: el atajo no pide Accesibilidad ni Monitorización de entrada. Si Ollama no está encendido, la app lo arranca y lo apaga al salir; si no responde, entrega la transcripción sin limpiar y lo avisa.
 
+La app graba siempre con el micrófono integrado del Mac (si no lo hay, con la entrada del sistema) y no cambia la entrada del sistema. Así, unos auriculares Bluetooth conectados siguen sonando en alta calidad mientras dictas, en vez de pasar al perfil de llamada, y las llamadas siguen usando su micrófono.
+
 ## Menú del micrófono
 
 | Ítem | Qué hace |
