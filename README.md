@@ -85,6 +85,18 @@ Conclusiones:
 - El glosario solo llega a Whisper como pista inicial. Las correcciones fijas (`CORRECCIONES.tsv`) corren únicamente en modo limpio.
 - Los nombres propios poco comunes (por ejemplo, nombres de especies) se transcriben mal en modo crudo con la voz sintética de la prueba.
 
+### Segunda ronda: solo modo crudo, con glosario propio
+
+Mismo Mac mini, con voz humana. Se dictó dos veces el mismo texto con unos 35 términos técnicos de una tesis de biología estructural (nombres de especies, proteínas, equipos y apellidos), con un glosario de 50 términos (~214 tokens) como pista para Whisper.
+
+- **Aciertos:** más o menos la mitad de los términos. Los errores cambiaron de un dictado al siguiente, así que una regla hecha con el primero casi no ayudó con el segundo. Algunos fallos son palabras reales en español (por ejemplo un apellido que sale como «garras»), que una regla fija no puede decidir.
+- **Alucinación:** Whisper añadió «Gracias por ver el video» al final de un dictado. Es un fallo conocido cuando queda silencio.
+- **Velocidad:** en uso real el modo crudo es muy rápido en este Mac. Según el autor, si vocaliza bien el resultado es suficiente y corregir lo que falle lleva unos 30 segundos.
+- **Qué recomienda el autor:** no escribir el glosario a mano. Pasar los propios documentos (tesis, artículos) a una IA y pedirle la lista de términos, abreviaturas e inconsistencias; el autor lo hizo con Claude y lo recomienda. Después se dicta esa lista, se mira cómo la escribe la app y con eso se arman las correcciones fijas.
+- **Límite del glosario:** Whisper solo usa los últimos 224 tokens de la pista ([guía de OpenAI](https://developers.openai.com/cookbook/examples/whisper_prompting_guide)). Si el glosario es más largo, se pierde el principio: los términos más importantes van al final.
+
+En la versión publicada, las correcciones fijas solo corren en modo limpio; en su copia local el autor probó aplicarlas también en crudo.
+
 ## Límites
 
 - Un dictado dura como máximo 10 minutos.
