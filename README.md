@@ -67,6 +67,24 @@ proyecto/dictado --archivo audio.m4a --modo limpio
 
 El segundo recorre el mismo camino que un dictado real (decodificación, motor, estados y portapapeles privado) e imprime el texto.
 
+## Pruebas en un Mac mini de 16 GB (2026-11-21)
+
+Mac mini con Apple Silicon y 16 GB de RAM, Ollama 0.40 y `gemma4:12b` (7,7 GB de descarga). Audio de prueba con la voz sintética de macOS, un solo párrafo; no es una medición con voz humana.
+
+| | Modo crudo | Modo limpio |
+|---|---|---|
+| Tiempo con Whisper ya cargado | ~5 s | ~2 s de Whisper + ~2,5 s de limpieza |
+| Primera limpieza tras cargar Gemma | no aplica | más de 25 s: la app se rinde y entrega el texto sin limpiar |
+| Memoria de la app | pico de ~2,4 GB | pico de ~2,4 GB, más Ollama con Gemma (7,8 GB) |
+
+Con Gemma cargada, la memoria libre del sistema bajó de 69 % a 27 % y el swap pasó de 0,8 GB a 7,9 GB (de 9,2 GB). Funciona, pero un Mac de 16 GB queda al límite si además hay otras apps abiertas.
+
+Conclusiones:
+
+- El **modo crudo** es cómodo en 16 GB. El **modo limpio** es posible, pero la primera carga de Gemma supera el tiempo de espera de la app; a partir de la segunda es rápido mientras Gemma siga en memoria (Ollama la descarga a los 10 minutos).
+- El glosario solo llega a Whisper como pista inicial. Las correcciones fijas (`CORRECCIONES.tsv`) corren únicamente en modo limpio.
+- Los nombres propios poco comunes (por ejemplo, nombres de especies) se transcriben mal en modo crudo con la voz sintética de la prueba.
+
 ## Límites
 
 - Un dictado dura como máximo 10 minutos.
